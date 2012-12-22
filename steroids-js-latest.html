@@ -43,12 +43,12 @@ Readable after Steroids ready event</p>
 
 <h4>Example:</h4>
 
-<p>Steroids.app.path == "/var/mobile/Applications/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA/Scanner.app/Documents/applications/local/123456789/"</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">fullPath: </span><span class="kc">undefined</span>
+<p>Steroids.app.absolutePath == "/var/mobile/Applications/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA/Scanner.app/Documents/applications/local/123456789/"</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">absolutePath: </span><span class="kc">undefined</span>
 
   <span class="nv">constructor: </span><span class="o">-&gt;</span>
     <span class="nx">@getPath</span> <span class="p">{},</span> <span class="nv">onSuccess: </span><span class="p">(</span><span class="nx">params</span><span class="p">)</span><span class="o">=&gt;</span>
       <span class="vi">@path = </span><span class="nx">params</span><span class="p">.</span><span class="nx">applicationPath</span>
-      <span class="vi">@fullPath = </span><span class="nx">params</span><span class="p">.</span><span class="nx">applicationFullPath</span>
+      <span class="vi">@absolutePath = </span><span class="nx">params</span><span class="p">.</span><span class="nx">applicationFullPath</span>
       <span class="nx">Steroids</span><span class="p">.</span><span class="nx">markComponentReady</span><span class="p">(</span><span class="s">&quot;App&quot;</span><span class="p">)</span>
 
   <span class="nv">getPath: </span><span class="nf">(options, callbacks)-&gt;</span>
@@ -357,9 +357,8 @@ animation.start()</p>             </td>             <td class="code">           
 
 <p>Valid values for attributes:
   location:
-    Can be file URL path relative to the application directory. Example value: 'index.html'
-    Can be a local URL. Files are served from the application directory. Example value: "http://localhost:13101/" (would serve "/index.html")
-    Can be a remote URL. All reachable URLs are valid. Example value: "http://www.google.com"
+    Can be a path relative to the application path. Example values: 'index.html'
+    Can be a full URL. All reachable URLs are valid. Example value: "http://www.google.com"
   pushAnimation and popAnimation:
     fade
       A transition that dissolves from one view to the next.
@@ -382,6 +381,11 @@ animation.start()</p>             </td>             <td class="code">           
   location: "http://google.com/"
 });</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">constructor: </span><span class="nf">(options)-&gt;</span>
     <span class="vi">@location = </span><span class="nx">options</span><span class="p">.</span><span class="nx">location</span>
+
+    <span class="k">if</span> <span class="nx">@location</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="s">&quot;://&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="c1"># if a path</span>
+      <span class="k">if</span> <span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">href</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="s">&quot;file://&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="c1"># if not currently on file protocol</span>
+        <span class="vi">@location = </span><span class="s">&quot;</span><span class="si">#{</span><span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">protocol</span><span class="si">}</span><span class="s">//</span><span class="si">#{</span><span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">host</span><span class="si">}</span><span class="s">/</span><span class="si">#{</span><span class="nx">@location</span><span class="si">}</span><span class="s">&quot;</span>
+
     <span class="vi">@pushAnimation = </span><span class="nx">options</span><span class="p">.</span><span class="nx">pushAnimation</span> <span class="k">if</span> <span class="nx">options</span><span class="p">.</span><span class="nx">pushAnimation</span><span class="o">?</span>
     <span class="vi">@pushAnimationDuration = </span><span class="nx">options</span><span class="p">.</span><span class="nx">pushAnimationDuration</span> <span class="k">if</span> <span class="nx">options</span><span class="p">.</span><span class="nx">pushAnimationDuration</span><span class="o">?</span>
     <span class="vi">@popAnimation = </span><span class="nx">options</span><span class="p">.</span><span class="nx">popAnimation</span> <span class="k">if</span> <span class="nx">options</span><span class="p">.</span><span class="nx">popAnimation</span><span class="o">?</span>
