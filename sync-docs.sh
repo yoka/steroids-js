@@ -1,0 +1,1 @@
+cp docs/steroids-js* .
