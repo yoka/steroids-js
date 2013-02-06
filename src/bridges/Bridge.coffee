@@ -22,6 +22,9 @@ class Bridge
 
   constructor: ->
 
+  reset: ()->
+    throw "ERROR: Bridge#reset not overridden by subclass!"
+
   sendMessageToNative: (options)->
     throw "ERROR: Bridge#sendMessageToNative not overridden by subclass!"
 

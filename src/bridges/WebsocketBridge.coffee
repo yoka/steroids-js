@@ -1,15 +1,21 @@
 # Communication bridge that utilizes a websocket through the network layer
 class WebsocketBridge extends Bridge
   constructor: ()->
-    # Use reopen to open WebSocket
-    @reopen()
+    if window._steroidsNativeReady?
+      # Use reopen to open WebSocket
+      @reopen()
 
   @isUsable: ()->
     true
 
+  reset: ()->
+    unless @websocket?
+      @reopen()
+      Steroids.markComponentReady("Bridge")
+
   # Open WebSocket connection to Native
   reopen: ()=>
-    @websocket = new WebSocket "ws://localhost:31337"
+    @websocket = new WebSocket "ws://localhost:#{AG_WEBSOCKET_PORT}"
     @websocket.onmessage = @message_handler
     @websocket.onclose = @reopen
     @websocket.addEventListener "open", @map_context
@@ -23,12 +29,15 @@ class WebsocketBridge extends Bridge
     return @
 
   sendMessageToNative:(message)->
-    # Ensure websocket is open before sending anything
-    if @websocket.readyState is 0
-      @websocket.addEventListener "open", ()=>
-         @websocket.send message
+    unless @websocket?
+      Steroids.on "ready", ()=>
+        @websocket.send message
     else
-      @websocket.send message
+      if @websocket.readyState is 0
+        @websocket.addEventListener "open", ()=>
+          @websocket.send message
+      else
+        @websocket.send message
 
   message_handler: (e)=>
     super(e.data)

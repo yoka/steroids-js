@@ -15,3 +15,6 @@ class AndroidBridge extends Bridge
 
   sendMessageToNative:(message)->
     AndroidAPIBridge.send message
+
+  reset: ()->
+    return true

@@ -23,10 +23,13 @@ window.steroids =
     if @waitingForComponents.length == 0
       @fireSteroidsEvent "ready"
 
+  nativeReady: ()->
+    @nativeBridge.reset()
 
 # Communication endpoint to native API
 # Native bridge is the communication layer from WebView to Native
 # Valid values are subclasses of Bridge
+window.steroids.waitingForComponents.push("Bridge")
 window.steroids.nativeBridge = Bridge.getBestNativeBridge()
 
 # Current version
