@@ -5,6 +5,8 @@ class App extends NativeObject
   absolutePath: undefined
 
   constructor: ->
+    Steroids.waitForComponent "App"
+
     super()
     @getPath {}, onSuccess: (params)=>
       @path = params.applicationPath

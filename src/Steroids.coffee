@@ -1,36 +1,68 @@
 window.steroids =
+  debugEnabled: false
   eventCallbacks: {}
-  waitingForComponents: []
+  waitingForComponents:
+    ready: ["NativeReady"]
+
+  debug: (msg)->
+    console.log msg if @debugEnabled
 
   on: (event, callback)->
-    if @["#{event}_has_fired"]?
+    if @["#{event}HasFired"]? && @["#{event}HasFired"] == true
+      @debug "#{event} has fired, instacallbacking #{callback}"
       callback()
     else
+      @debug "#{event} not yet fired, storing callback #{callback}"
       @eventCallbacks[event] ||= []
       @eventCallbacks[event].push(callback)
+      @debug "#{event} now has #{@eventCallbacks[event].length} callbacks"
 
 
   fireSteroidsEvent: (event)->
-    @["#{event}_has_fired"] = new Date().getTime()
+    @debug "firing #{event}"
+    @["#{event}HasFired"] = true
 
     if @eventCallbacks[event]?
+      @debug "firing #{@eventCallbacks[event].length} callbacks"
       for callback in @eventCallbacks[event]
-        callback()
+        @debug "firing callback: #{callback}"
+        callback() if callback?
         @eventCallbacks[event].splice @eventCallbacks[event].indexOf(callback), 1
 
-  markComponentReady: (model)->
-    @waitingForComponents.splice @waitingForComponents.indexOf(model), 1
-    if @waitingForComponents.length == 0
-      @fireSteroidsEvent "ready"
+      @debug "callback queue for #{event} has now #{@eventCallbacks[event].length} callbacks"
+
+
+  markComponentReady: (model, event="ready")->
+    return unless @waitingForComponents[event]?
+    return if @waitingForComponents[event].indexOf(model) == -1
+
+    @debug "marking #{model} #{event}"
+    @waitingForComponents[event].splice @waitingForComponents[event].indexOf(model), 1
+    if @waitingForComponents[event].length == 0
+      @debug "marked #{model} #{event}, firing #{event}"
+      @fireSteroidsEvent event
+    else
+      @debug "still waiting for #{JSON.stringify @waitingForComponents[event]}"
+
+  waitForComponent: (model, event="ready")->
+    @debug "waiting for #{model} for event #{event}"
+    @["#{event}HasFired"] = false
+    @waitingForComponents[event] ||= []
+    @waitingForComponents[event].push model
 
   nativeReady: ()->
+    @debug "received nativeReady"
     @nativeBridge.reset()
+    @markComponentReady "NativeReady"
 
 # Communication endpoint to native API
 # Native bridge is the communication layer from WebView to Native
 # Valid values are subclasses of Bridge
-window.steroids.waitingForComponents.push("Bridge")
 window.steroids.nativeBridge = Bridge.getBestNativeBridge()
+
+if window._steroidsNativeReady?
+  window.steroids.debug "nativeready has fired before steroids init"
+  window.steroids.nativeReady()
 
 # Current version
 window.steroids.version = "@@version"
@@ -68,7 +100,6 @@ window.steroids.camera = new Camera
 window.steroids.navigationBar = new NavigationBar
 
 # Public App singleton
-window.steroids.waitingForComponents.push("App")
 window.steroids.app = new App
 
 # Public Device singleton

@@ -1,5 +1,4 @@
-document.addEventListener "deviceready", ->
-
+Steroids.on "ready", ->
   document.getElementById("recordEvent").addEventListener "touchstart", ->
 
     Steroids.analytics.recordEvent

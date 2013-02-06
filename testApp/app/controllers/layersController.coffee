@@ -1,4 +1,4 @@
-document.addEventListener "deviceready", ->
+Steroids.on "ready", ->
 
   openElement = document.getElementById("openLayer")
   openFadeElement = document.getElementById("openLayerFade")

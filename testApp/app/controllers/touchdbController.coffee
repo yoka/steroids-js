@@ -1,5 +1,4 @@
-
-document.addEventListener "deviceready", ->
+Steroids.on "ready", ->
   Steroids.navigationBar.show { title: "TOUCHDB" }
 
   createSuccess = () =>

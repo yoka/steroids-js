@@ -1,4 +1,4 @@
-document.addEventListener "deviceready", ->
+Steroids.on "ready", ->
   appPath = ""
 
   Steroids.audio.prime()

@@ -39,7 +39,7 @@ class Bridge
       if @callbacks[msg.callback]?
         @callbacks[msg.callback].call(msg.parameters, msg.parameters)
 
-  send: (options)=>
+  prepareMessage: (options)->
     callbacks = @storeCallbacks(options)
 
     # Build the request object for native API
@@ -52,6 +52,11 @@ class Bridge
     request.parameters["view"] = window.top.AG_VIEW_ID
     request.parameters["screen"] = window.top.AG_SCREEN_ID
     request.parameters["layer"] = window.top.AG_LAYER_ID
+
+    return request
+
+  send: (options)=>
+    request = @prepareMessage(options)
 
     #console.log(request)
     @sendMessageToNative JSON.stringify(request)
