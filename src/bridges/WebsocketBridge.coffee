@@ -2,8 +2,7 @@
 class WebsocketBridge extends Bridge
   constructor: ()->
     if window._steroidsNativeReady?
-      # Use reopen to open WebSocket
-      @reopen()
+      @reset()
 
   @isUsable: ()->
     true
