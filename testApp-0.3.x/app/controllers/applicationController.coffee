@@ -21,7 +21,7 @@ document.addEventListener "deviceready", ()->
 
   $(".closesModal").on "tap", () ->
 
-     steroids.modal.hide()
+    steroids.modal.hide()
 
   $(".performsTest").on "tap", () ->
 

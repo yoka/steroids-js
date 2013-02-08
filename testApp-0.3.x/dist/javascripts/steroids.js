@@ -34,6 +34,10 @@ Bridge = (function() {
 
   }
 
+  Bridge.prototype.reset = function() {
+    throw "ERROR: Bridge#reset not overridden by subclass!";
+  };
+
   Bridge.prototype.sendMessageToNative = function(options) {
     throw "ERROR: Bridge#sendMessageToNative not overridden by subclass!";
   };
@@ -52,7 +56,7 @@ Bridge = (function() {
     }
   };
 
-  Bridge.prototype.send = function(options) {
+  Bridge.prototype.prepareMessage = function(options) {
     var callbacks, request;
     callbacks = this.storeCallbacks(options);
     request = {
@@ -63,6 +67,12 @@ Bridge = (function() {
     request.parameters["view"] = window.top.AG_VIEW_ID;
     request.parameters["screen"] = window.top.AG_SCREEN_ID;
     request.parameters["layer"] = window.top.AG_LAYER_ID;
+    return request;
+  };
+
+  Bridge.prototype.send = function(options) {
+    var request;
+    request = this.prepareMessage(options);
     return this.sendMessageToNative(JSON.stringify(request));
   };
 
@@ -111,10 +121,11 @@ AndroidBridge = (function(_super) {
   __extends(AndroidBridge, _super);
 
   function AndroidBridge() {
-    AndroidAPIBridge.registerHandler("Steroids.nativeBridge.message_handler");
+    AndroidAPIBridge.registerHandler("steroids.nativeBridge.message_handler");
     window.AG_SCREEN_ID = AndroidAPIBridge.getAGScreenId();
     window.AG_LAYER_ID = AndroidAPIBridge.getAGLayerId();
     window.AG_VIEW_ID = AndroidAPIBridge.getAGViewId();
+    steroids.markComponentReady("Bridge");
     return true;
   }
 
@@ -124,6 +135,10 @@ AndroidBridge = (function(_super) {
 
   AndroidBridge.prototype.sendMessageToNative = function(message) {
     return AndroidAPIBridge.send(message);
+  };
+
+  AndroidBridge.prototype.reset = function() {
+    return true;
   };
 
   return AndroidBridge;
@@ -140,42 +155,37 @@ WebsocketBridge = (function(_super) {
 
   function WebsocketBridge() {
     this.message_handler = __bind(this.message_handler, this);
-
-    this.map_context = __bind(this.map_context, this);
-
-    this.reopen = __bind(this.reopen, this);
-    this.reopen();
+    steroids.debug("Initializing WebsocketBridge");
   }
 
   WebsocketBridge.isUsable = function() {
     return true;
   };
 
-  WebsocketBridge.prototype.reopen = function() {
-    this.websocket = new WebSocket("ws://localhost:31337");
+  WebsocketBridge.prototype.reset = function() {
+    var _this = this;
+    steroids.waitForComponent("WebSocket", "websocketUsable");
+    steroids.debug("resetting websocket to port " + AG_WEBSOCKET_PORT);
+    this.websocket = new WebSocket("ws://localhost:" + AG_WEBSOCKET_PORT);
     this.websocket.onmessage = this.message_handler;
-    this.websocket.onclose = this.reopen;
-    this.websocket.addEventListener("open", this.map_context);
-    this.map_context();
-    return false;
-  };
-
-  WebsocketBridge.prototype.map_context = function() {
-    this.send({
-      method: "mapWebSocketConnectionToContext"
+    this.websocket.addEventListener("open", function() {
+      steroids.debug("websocket is now open");
+      _this.websocket.send(JSON.stringify(_this.prepareMessage({
+        method: "mapWebSocketConnectionToContext",
+        parameters: {}
+      })));
+      return steroids.markComponentReady("WebSocket", "websocketUsable");
     });
-    return this;
+    return false;
   };
 
   WebsocketBridge.prototype.sendMessageToNative = function(message) {
     var _this = this;
-    if (this.websocket.readyState === 0) {
-      return this.websocket.addEventListener("open", function() {
-        return _this.websocket.send(message);
-      });
-    } else {
-      return this.websocket.send(message);
-    }
+    steroids.debug("Queueing API call: " + message);
+    return steroids.on("websocketUsable", function() {
+      steroids.debug("Sending API call: " + message);
+      return steroids.nativeBridge.websocket.send(message);
+    });
   };
 
   WebsocketBridge.prototype.message_handler = function(e) {
@@ -388,6 +398,7 @@ App = (function(_super) {
 
   function App() {
     var _this = this;
+    steroids.waitForComponent("App");
     App.__super__.constructor.call(this);
     this.getPath({}, {
       onSuccess: function(params) {
@@ -668,7 +679,7 @@ Audio = (function(_super) {
     if (callbacks == null) {
       callbacks = {};
     }
-    return Steroids.on("ready", function() {
+    return steroids.on("ready", function() {
       var mediaPath;
       if (options.absolutePath) {
         mediaPath = options.absolutePath;
@@ -817,10 +828,10 @@ AuthorizationCodeFlow = (function(_super) {
       scope: this.options.scope || ""
     };
     authorizationUrl = this.options.authorizationUrl.concat(this.concatenateUrlParams(this.xhrAuthorizationParams));
-    authenticationLayer = new Steroids.Layer({
+    authenticationLayer = new steroids.Layer({
       location: authorizationUrl
     });
-    return Steroids.modal.show({
+    return steroids.modal.show({
       layer: authenticationLayer
     });
   };
@@ -850,7 +861,7 @@ AuthorizationCodeFlow = (function(_super) {
       if (request.readyState === 4) {
         responseJSON = JSON.parse(request.responseText);
         callback(responseJSON.access_token);
-        return Steroids.modal.hide();
+        return steroids.modal.hide();
       }
     };
     return request.send(body);
@@ -1135,75 +1146,90 @@ XHR = (function(_super) {
   return XHR;
 
 })(NativeObject);
-;var Analytics,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-Analytics = (function(_super) {
-
-  __extends(Analytics, _super);
-
-  function Analytics() {
-    return Analytics.__super__.constructor.apply(this, arguments);
-  }
-
-  Analytics.prototype.recordEvent = function(opts, callbacks) {
-    if (opts == null) {
-      opts = {};
-    }
-    if (callbacks == null) {
-      callbacks = {};
-    }
-    return this.nativeCall({
-      method: "recordEvent",
-      parameters: {
-        type: "custom",
-        attributes: opts.event
-      },
-      successCallbacks: [callbacks.onSuccess],
-      failureCallbacks: [callbacks.onFailure]
-    });
-  };
-
-  return Analytics;
-
-})(NativeObject);
 ;
 window.steroids = {
+  debugEnabled: false,
   eventCallbacks: {},
-  waitingForComponents: [],
+  waitingForComponents: {
+    ready: ["NativeReady"]
+  },
+  debug: function(msg) {
+    if (this.debugEnabled) {
+      return console.log(msg);
+    }
+  },
   on: function(event, callback) {
     var _base;
-    if (this["" + event + "_has_fired"] != null) {
+    if ((this["" + event + "HasFired"] != null) && this["" + event + "HasFired"] === true) {
+      this.debug("" + event + " has fired, instacallbacking " + callback);
       return callback();
     } else {
+      this.debug("" + event + " not yet fired, storing callback " + callback);
       (_base = this.eventCallbacks)[event] || (_base[event] = []);
-      return this.eventCallbacks[event].push(callback);
+      this.eventCallbacks[event].push(callback);
+      return this.debug("" + event + " now has " + this.eventCallbacks[event].length + " callbacks");
     }
   },
   fireSteroidsEvent: function(event) {
-    var callback, _i, _len, _ref, _results;
-    this["" + event + "_has_fired"] = new Date().getTime();
+    var callback, _i, _len, _ref;
+    this.debug("firing " + event);
+    this["" + event + "HasFired"] = true;
     if (this.eventCallbacks[event] != null) {
+      this.debug("firing " + this.eventCallbacks[event].length + " callbacks");
       _ref = this.eventCallbacks[event];
-      _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         callback = _ref[_i];
-        callback();
-        _results.push(this.eventCallbacks[event].splice(this.eventCallbacks[event].indexOf(callback), 1));
+        this.debug("firing callback: " + callback);
+        if (callback != null) {
+          callback();
+        }
+        this.eventCallbacks[event].splice(this.eventCallbacks[event].indexOf(callback), 1);
       }
-      return _results;
+      return this.debug("callback queue for " + event + " has now " + this.eventCallbacks[event].length + " callbacks");
     }
   },
-  markComponentReady: function(model) {
-    this.waitingForComponents.splice(this.waitingForComponents.indexOf(model), 1);
-    if (this.waitingForComponents.length === 0) {
-      return this.fireSteroidsEvent("ready");
+  markComponentReady: function(model, event) {
+    if (event == null) {
+      event = "ready";
     }
+    if (this.waitingForComponents[event] == null) {
+      return;
+    }
+    if (this.waitingForComponents[event].indexOf(model) === -1) {
+      return;
+    }
+    this.debug("marking " + model + " " + event);
+    this.waitingForComponents[event].splice(this.waitingForComponents[event].indexOf(model), 1);
+    if (this.waitingForComponents[event].length === 0) {
+      this.debug("marked " + model + " " + event + ", firing " + event);
+      return this.fireSteroidsEvent(event);
+    } else {
+      return this.debug("still waiting for " + (JSON.stringify(this.waitingForComponents[event])));
+    }
+  },
+  waitForComponent: function(model, event) {
+    var _base;
+    if (event == null) {
+      event = "ready";
+    }
+    this.debug("waiting for " + model + " for event " + event);
+    this["" + event + "HasFired"] = false;
+    (_base = this.waitingForComponents)[event] || (_base[event] = []);
+    return this.waitingForComponents[event].push(model);
+  },
+  nativeReady: function() {
+    this.debug("received nativeReady");
+    this.nativeBridge.reset();
+    return this.markComponentReady("NativeReady");
   }
 };
 
 window.steroids.nativeBridge = Bridge.getBestNativeBridge();
+
+if (window._steroidsNativeReady != null) {
+  window.steroids.debug("nativeready has fired before steroids init");
+  window.steroids.nativeReady();
+}
 
 window.steroids.version = "0.2.5";
 
@@ -1232,8 +1258,6 @@ window.steroids.audio = new Audio;
 window.steroids.camera = new Camera;
 
 window.steroids.navigationBar = new NavigationBar;
-
-window.steroids.waitingForComponents.push("App");
 
 window.steroids.app = new App;
 

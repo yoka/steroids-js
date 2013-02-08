@@ -5,15 +5,15 @@
     function LayersController() {}
 
     LayersController.testPushPop = function() {
-      var appgyver, pushed;
+      var popView, pushed;
       pushed = function() {
         return console.log("PUSHED");
       };
-      appgyver = new steroids.views.WebView({
+      popView = new steroids.views.WebView({
         location: "/views/layers/pop.html"
       });
       return steroids.layers.push({
-        layer: appgyver
+        layer: popView
       }, {
         onSuccess: pushed
       });
@@ -30,5 +30,15 @@
     return LayersController;
 
   })();
+
+  Steroids.on("ready", function() {
+    return Steroids.navigationBar.show({
+      title: "LAYERS"
+    });
+  });
+
+  Steroids.on("ready", function() {
+    return Steroids.audio.prime();
+  });
 
 }).call(this);

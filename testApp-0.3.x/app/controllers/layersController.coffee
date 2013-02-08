@@ -20,3 +20,9 @@ class window.LayersController
 
     steroids.layers.pop()
 
+Steroids.on "ready", ->
+  Steroids.navigationBar.show title: "LAYERS"
+
+Steroids.on "ready", ->
+  Steroids.audio.prime()
+
