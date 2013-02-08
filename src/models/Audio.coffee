@@ -15,7 +15,7 @@ class Audio extends NativeObject
   # });
   #
   play: (options, callbacks={})->
-    Steroids.on "ready", ()=>
+    steroids.on "ready", ()=>
       if options.absolutePath
         mediaPath = options.absolutePath
       else

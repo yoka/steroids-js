@@ -9,8 +9,8 @@ class AuthorizationCodeFlow extends OAuth2Flow
 
     authorizationUrl = @options.authorizationUrl.concat @concatenateUrlParams(@xhrAuthorizationParams)
 
-    authenticationLayer = new Steroids.Layer { location: authorizationUrl }
-    Steroids.modal.show({ layer: authenticationLayer })
+    authenticationLayer = new steroids.Layer { location: authorizationUrl }
+    steroids.modal.show({ layer: authenticationLayer })
 
   finish: (callback)=>
     @xhrAccessTokenParams =
@@ -41,6 +41,6 @@ class AuthorizationCodeFlow extends OAuth2Flow
         callback(responseJSON.access_token)
 
         # hide authenticationLayer
-        Steroids.modal.hide()
+        steroids.modal.hide()
 
     request.send(body)
